@@ -6,8 +6,8 @@ from sklearn.metrics import auc
 def standardize(grid, p):
 	#using stupid rectangular rule, much smarter numerical integration methods exist
 	#should also work for grids of variable width
-	N = grid.shape[0]
-	assert p.shape[0] == N
+
+	assert p.shape[0] == grid.shape[0]
 
 	mid = 0.5 * (p[1:] + p[:-1])
 
