@@ -3,10 +3,10 @@ import pymc3 as pm
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
-#4.1
-
 data = pd.read_csv('Howell1.csv', delimiter=';')
+#4.1
+'''
+
 
 d2 = data[data['age'] >= 18]
 
@@ -56,10 +56,9 @@ weight = d2['weight']
 
 weightBar = np.mean(weight)
 
-
 with pm.Model() as normal_approximation:
 	alpha = pm.Normal('alpha', mu=120, sigma=20)
-	beta = pm.Lognormal('beta', mu=0, sigma=1.5)
+	beta = pm.Lognormal('beta', mu=0, sigma=1)
 
 	s = pm.Uniform('sigma', 0, 20)
 
@@ -77,7 +76,6 @@ with pm.Model() as normal_approximation:
 
 #draw samples from posterior
 samples = np.random.multivariate_normal([mean_q['alpha'], mean_q['beta'], mean_q['sigma']], covariance_q, size=10000)
-
 
 fig = plt.figure()
 ax = fig.add_subplot(111)
@@ -102,8 +100,19 @@ posteriorDraws = np.random.normal(mus, samples[:,2])
 posteriorCi89 = np.percentile(posteriorDraws, [5.5, 94.5], axis=1).T
 
 ax.fill_between(ww, posteriorCi89[:,0], posteriorCi89[:,1], color='k', alpha=0.1)
+ax.set_title('4.2')
+print('%f kg / 10 cm' % 10 * b_map)
 
-plt.close('all')
+# not a good fit,
+# changing to a "better" prior didn't help a~N(120,20), b~LogN(0,1.5)
+# many points away from the mean
+# especially at the extreme weights
+# consistently overestimates or underestimates true height
+# in children, age is an important covariate
+# well, to now choose a different model is difficult, because I've looked at the scatter plot
+
+
+
 #4.3
 height = data['height']
 weight = data['weight']
@@ -114,8 +123,8 @@ weightBar = np.mean(weight)
 
 
 with pm.Model() as normal_approximation:
-	alpha = pm.Normal('alpha', mu=120, sigma=20)
-	beta = pm.Lognormal('beta', mu=0, sigma=1.5)
+	alpha = pm.Normal('alpha', mu=178, sigma=20)
+	beta = pm.Lognormal('beta', mu=0, sigma=1)
 
 	s = pm.Uniform('sigma', 0, 20)
 
@@ -158,4 +167,52 @@ posteriorDraws = np.random.normal(mus, samples[:,2])
 posteriorCi89 = np.percentile(posteriorDraws, [1.5, 98.5], axis=1).T
 
 ax.fill_between(wwe, posteriorCi89[:,0], posteriorCi89[:,1], color='k', alpha=0.1)
+ax.set_title('4.3')
 #pretty good fit?
+
+'''
+
+#4.4
+N = 50
+alphas = np.random.normal(178, 20, size=N)
+beta1s = np.exp(np.random.normal(0, 1, size=N))
+beta2s = -np.abs(np.random.normal(0, 2, size=N))
+sigmas = 50 * np.random.rand(N)
+
+height = data['height']
+weight = data['weight']
+
+
+weight = np.array(weight)
+height = np.array(height)
+
+from sklearn.preprocessing import StandardScaler
+
+
+ss = StandardScaler()
+weightS = ss.fit_transform(weight.reshape(-1,1)).reshape(-1,)
+
+weightS2 = weightS ** 2
+
+xxu = np.linspace(np.min(weight), np.max(weight), 200).reshape(-1,1)
+xx = ss.transform(xxu).reshape(-1,)
+xx2 = xx ** 2
+
+xx = np.tile(xx, (N,1))
+xx2 = np.tile(xx2, (N,1))
+
+mus = (alphas + beta1s * xx.T + beta2s * xx2.T).T
+
+fig = plt.figure()
+ax = fig.add_subplot(111)
+for i in range(N):
+	ax.plot(xxu, mus[i], 'k')
+
+# function should be non-decreasing, i.e. 1st derivative positive at least in the range we are interested in
+# h(w) = a + β_1 * (w-wbar) + β_2 * (w-wbar)^2
+# h'(w) = β_1 + 2 * β_2 * (w-wbar)
+
+
+
+
+plt.show()
