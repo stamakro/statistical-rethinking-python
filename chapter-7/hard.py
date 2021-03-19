@@ -19,12 +19,12 @@ n_samples = 2000 // 4
 n_tuning = 1000
 
 with pm.Model() as linear:
-	a = pm.Normal('b0', mu=0., sigma=0.5)
+	#a = pm.Normal('b0', mu=0., sigma=0.5)
 	b = pm.Normal('b1', mu=0., sigma=0.5)
 
 	s = pm.Exponential('s', lam=0.5)
 
-	m = a + b * rate
+	m = b * rate
 
 	r = pm.Normal('r', mu=m, sigma=s, observed=revenue)
 
@@ -63,6 +63,7 @@ with pm.Model() as cubic:
 r = az.compare({'L': traceLinear, 'Q':traceQuadratic, 'C':traceCubic}, 'WAIC')
 print(r)
 
+'''
 #------------------------------------------------------------------------------------------------------------------
 # 7H2
 ww = az.waic(traceLinear, pointwise=True)
@@ -210,7 +211,7 @@ with pm.Model() as fox5:
 
 
 r = az.compare({'m1': trace1, 'm2':trace2, 'm3':trace3, 'm4': trace4, 'm5': trace5}, 'WAIC')
-
+'''
 # model with all variables is the best
 # ignoring group size is really bad, because it has a negative effect from the other two variables
 # using area instead of avgfood is slightly worse and the difference is more consistent (smaller std error)
