@@ -247,6 +247,8 @@ print(r)
 #clear negative effect for interaction, much better waic, weigh=0.8
 
 '''
+
+# 8H5
 data = pd.read_csv('Wines2012.csv', delimiter=';')
 
 score = standardize(data['score'])
@@ -270,25 +272,91 @@ for i,n in enumerate(data['wine']):
 	wine1h[i, wineDict[n]] = 1
 	
 
+flightNames = list(set(data['flight'])) 
+flightDict = dict()
+for i,n in enumerate(flightNames):
+	flightDict[n] = i
+
+flight1h = np.zeros((data.shape[0], len(flightNames)))
+
+for i,n in enumerate(data['flight']):
+	flight1h[i, flightDict[n]] = 1
+
+wineAmer1h = np.zeros((data.shape[0], 2))
+for i, n in enumerate(data['wine.amer']):
+	wineAmer1h[i, n] = 1
+
+judgeAmer1h = np.zeros((data.shape[0], 2))
+for i, n in enumerate(data['judge.amer']):
+	judgeAmer1h[i, n] = 1
+
 with pm.Model() as normalReg:
-	interceptJ = pm.Normal('judge', mu=0., sigma=2., shape=len(judgeDict))
-	interceptW = pm.Normal('wine', mu=0., sigma=2., shape=len(wineDict))
+	interceptJ = pm.Normal('judge', mu=0., sigma=1., shape=len(judgeDict))
+	interceptW = pm.Normal('wine', mu=0., sigma=1., shape=len(wineDict))
 
 	sigma = pm.Exponential('sigma', lam=1.)
 	mu = pm.math.dot(judge1h, interceptJ) + pm.math.dot(wine1h, interceptW)
 
 	outcome = pm.Normal('score', mu=mu, sigma=sigma, observed=score)
-	trace = pm.sample(2000, tune=1500)
+	trace = pm.sample(2000, tune=1500, chains=2, cores=2)
 
 
 traceWine = trace['wine'].T
 
 plt.figure()
 plt.boxplot(list(traceWine), whis=(2.5, 97.5))
+plt.title('wine means')
 
 traceJ = trace['judge'].T
 plt.figure()
 plt.boxplot(list(traceJ), whis=(2.5, 97.5))
+plt.title('judge means')
+
+with pm.Model() as normalReg2:
+	interceptJA = pm.Normal('judgeA', mu=0., sigma=1., shape=2)
+	interceptWA = pm.Normal('wineA', mu=0., sigma=1., shape=2)
+	interceptFL = pm.Normal('flight', mu=0., sigma=1., shape=len(flightDict))
+
+	sigma = pm.Exponential('sigma', lam=1.)
+	mu = pm.math.dot(judgeAmer1h, interceptJA) + pm.math.dot(wineAmer1h, interceptWA) + pm.math.dot(flight1h, interceptFL)
+
+	outcome = pm.Normal('score', mu=mu, sigma=sigma, observed=score)
+	trace2 = pm.sample(2000, tune=1500, chains=2, cores=2)
+
+traceJA = trace2['judgeA'].T
+plt.figure()
+plt.boxplot(list(traceJA), whis=(2.5, 97.5))
+plt.title('judge American')
+plt.xticks(ticks=[1,2], labels=['FR', 'US'])
+
+traceWA = trace2['wineA'].T
+plt.figure()
+plt.boxplot(list(traceWA), whis=(2.5, 97.5))
+plt.title('wine American')
+plt.xticks(ticks=[1,2], labels=['FR', 'US'])
+
+traceF = trace2['flight'].T
+plt.figure()
+plt.boxplot(list(traceF), whis=(2.5, 97.5))
+plt.title('flight')
+plt.xticks(ticks=[1,2], labels=flightNames)
+
+
+with pm.Model() as interact:
+	interceptJA = pm.Normal('judgeA', mu=0., sigma=1., shape=2)
+	interceptWA = pm.Normal('wineA', mu=0., sigma=1., shape=2)
+	interceptFL = pm.Normal('flight', mu=0., sigma=1., shape=len(flightDict))
+
+	sigma = pm.Exponential('sigma', lam=1.)
+	mu = pm.math.dot(judgeAmer1h, interceptJA) + pm.math.dot(wineAmer1h, interceptWA) + pm.math.dot(flight1h, interceptFL)
+
+	outcome = pm.Normal('score', mu=mu, sigma=sigma, observed=score)
+	trace2 = pm.sample(2000, tune=1500, chains=2, cores=2)
+
+
+
+
+
 
 
 
