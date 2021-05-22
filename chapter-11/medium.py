@@ -32,7 +32,7 @@ for i, a in enumerate(chimps['actor']):
 
 
 with pm.Model() as binomial:
-	a = pm.Normal('actor', mu=0, sigma=1.5, shape=actor1h.shape[1])
+	a = pm.Normal('actor', mu=0, sigma=10., shape=actor1h.shape[1])
 	b = pm.Normal('treatment', mu=0, sigma=0.5, shape=treatment1h.shape[1])
 
 	pp = pm.math.dot(treatment1h, b) + pm.math.dot(actor1h, a)
@@ -60,7 +60,7 @@ precis(np.hstack((trace['actor'], trace['treatment'])))
 
 # seems quite similar with good priors
 # estimate of 2nd chimp becomes very different with wide priors
-
+sys.exit(0)
 # 11M8
 data = pd.read_csv('Kline.csv', delimiter=';') 
 from sklearn.preprocessing import StandardScaler
